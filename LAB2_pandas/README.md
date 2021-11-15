@@ -1,3 +1,5 @@
+All files necessary to run programs are in the archive LAB2_necessary_files.rar
+
 To run the program "program3.py" you will need to install two libraries: "lxml" and "openpyxl". 
 You can use the following commands to install: "pip install lxml" and "pip install openpyxl".
 
