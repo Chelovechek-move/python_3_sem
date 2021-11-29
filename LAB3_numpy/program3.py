@@ -16,7 +16,7 @@ data_x = np.linspace(0, 50)
 for i in range(255):
     plt.ion()                       # interactive mode will be on
     plt.clf()                       # clear the current figure
-    U = U @ (I - 0.5 * A)           # @ means matrix multiplication
+    U = (I - 0.5 * A) @ U           # @ means matrix multiplication
     plt.axis([0, 50, 0, 10])
     plt.grid(True)
     plt.plot(data_x, U)
