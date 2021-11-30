@@ -12,5 +12,6 @@ A = Matrix(
      [0, 0, 0, 0, 0, 0, 0, 0, 0],
      [-y, 0, 0, 0, 0, 0, 0, 0, 0]])
 
-for val in A.eigenvals():
-    print(f'Собственное значение: {val}, кратность: {A.eigenvals()[val]}')
+A_eigenvalues = A.eigenvals()
+for a, b in A_eigenvalues.items():
+    print(f'Собственное значение: {a}, кратность: {b}')
