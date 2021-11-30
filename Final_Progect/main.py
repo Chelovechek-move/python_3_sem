@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 wall_width = 100
 # r_shift может быть и положительным, и отрицательным
 # r_shift принимает положительные значения, если стенка сдвинута вправо относительно width / 2
-r_shift = 100
+r_shift = 20
 
 
 # Ball - это класс, описывающий отдельный шарик
@@ -38,7 +38,7 @@ class Wall:
 	def __init__(self):
 		self.width = wall_width
 		self.height = height
-		self.x = (width / 2) - (self.width / 2)
+		self.x = (width / 2) + r_shift - (self.width / 2)
 		self.y = 0
 		self.m = 100
 
@@ -52,11 +52,14 @@ class Wall:
 	def get_left_coord(self):
 		return self.x
 
+	def get_position(self):
+		return self.x + self.width / 2
+
 
 pygame.init()
 # Задаём размеры окна
 size = width, height = 1000, 750
-n_balls = 1000  # Задаём количество шариков
+n_balls = 10000  # Задаём количество шариков
 screen = pygame.display.set_mode(size)
 
 white_color = 255, 255, 255  # Переменная, определяющая белый цвет
@@ -76,6 +79,7 @@ for i in range(n_balls):
 	balls_r = np.append(balls_r, Ball_r())
 
 wall = Wall()  # Создаём экземпляр класса Wall() - это наша стенка
+wall_position = np.array([])  # Сдесь будут лежать горизонтальные координаты стенки
 
 run = True  # Переменная, отвечающая за то, активно ли окно
 while run:
@@ -104,6 +108,9 @@ while run:
 		# Обработаем столкновения со стенкой
 		if balls_l[i].position_x + balls_l[i].radius > wall.get_left_coord():
 			balls_l[i].velocity_x *= -1
+			# Мы будем немного телепортировать шарики от стенки после соударения,так как из-за того,
+			# что и они и стенка движутся, то они как бы "прилипают" к ней и сильно замедляют ее перемещение
+			balls_l[i].position_x = balls_l[i].position_x - 5
 			# Двигаем саму стенку
 			wall.move(1, 0)
 
@@ -123,6 +130,9 @@ while run:
 		# Обработаем столкновения со стенкой
 		if balls_r[i].position_x - balls_r[i].radius < wall.get_right_coord():
 			balls_r[i].velocity_x *= -1
+			# Мы будем немного телепортировать шарики от стенки после соударения,так как из-за того,
+			# что и они и стенка движутся, то они как бы "прилипают" к ней и сильно замедляют ее перемещение
+			balls_r[i].position_x = balls_r[i].position_x + 5
 			# Двигаем саму стенку
 			wall.move(-1, 0)
 
@@ -131,11 +141,34 @@ while run:
 		if balls_r[i].position_y + balls_r[i].radius > height:
 			balls_r[i].velocity_y *= -1
 
-		# Отрисовываем шарики слева и справа от стенки:
-		pygame.draw.circle(screen, white_color, (balls_l[i].position_x, balls_l[i].position_y), balls_l[i].radius)
-		pygame.draw.circle(screen, white_color, (balls_r[i].position_x, balls_r[i].position_y), balls_r[i].radius)
+		wall_position = np.append(wall_position, wall.get_position())
+
+		# # Отрисовываем шарики слева и справа от стенки:
+		# pygame.draw.circle(screen, white_color, (balls_l[i].position_x, balls_l[i].position_y), balls_l[i].radius)
+		# pygame.draw.circle(screen, white_color, (balls_r[i].position_x, balls_r[i].position_y), balls_r[i].radius)
 
 	# Обновляем дисплей:
 	pygame.display.update()
 
 pygame.quit()
+
+data_x = np.arange(len(wall_position))
+
+# Сгладим колебания графика, используя скользящее среднее с шагом n
+n = 100000
+data_y_new = np.zeros(wall_position.size)
+
+for i in range(wall_position.size):
+	if i + 1 <= n:
+		sum_data = (wall_position[:i + 1].sum()) / (i + 1)
+		data_y_new[i] = sum_data
+	else:
+		sum_data = (wall_position[i - n:i].sum()) / n
+		data_y_new[i] = sum_data
+
+# Построим график
+plt.grid(True)
+plt.plot(data_x, wall_position, label='Сырые данные')
+plt.plot(data_x, data_y_new, label='Данные после фильтра')
+plt.legend()
+plt.show()
