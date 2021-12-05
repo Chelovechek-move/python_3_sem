@@ -60,6 +60,47 @@ class Wall:
 		self.x = pos - self.width / 2
 
 
+# ____Эта функция сохраняет все необходимые данные для восстановления состояния эксперимента______
+# Ей необходимо передать два массива экземпляров шариков и массив с историей положения стенки
+def save_experiment_state(balls_l, balls_r, wall_position):
+	# Создаём массивы для сохранения данных
+	mas_balls_l_pos_x = np.zeros(n_balls)
+	mas_balls_l_pos_y = np.zeros(n_balls)
+	mas_balls_r_pos_x = np.zeros(n_balls)
+	mas_balls_r_pos_y = np.zeros(n_balls)
+	mas_balls_l_vel_x = np.zeros(n_balls)
+	mas_balls_l_vel_y = np.zeros(n_balls)
+	mas_balls_r_vel_x = np.zeros(n_balls)
+	mas_balls_r_vel_y = np.zeros(n_balls)
+
+	# Записываем в массивы все текущие данные о шариках. Делаем это в цикле
+	for i in range(n_balls):
+		mas_balls_l_pos_x[i] = balls_l[i].position_x
+		mas_balls_l_pos_y[i] = balls_l[i].position_y
+		mas_balls_r_pos_x[i] = balls_r[i].position_x
+		mas_balls_r_pos_y[i] = balls_r[i].position_y
+		mas_balls_l_vel_x[i] = balls_l[i].velocity_x
+		mas_balls_l_vel_y[i] = balls_l[i].velocity_y
+		mas_balls_r_vel_x[i] = balls_r[i].velocity_x
+		mas_balls_r_vel_y[i] = balls_r[i].velocity_y
+
+	data = {'balls_l_pos_x': mas_balls_l_pos_x,
+			'balls_l_pos_y': mas_balls_l_pos_y,
+			'balls_r_pos_x': mas_balls_r_pos_x,
+			'balls_r_pos_y': mas_balls_r_pos_y,
+			'balls_l_vel_x': mas_balls_l_vel_x,
+			'balls_l_vel_y': mas_balls_l_vel_y,
+			'balls_r_vel_x': mas_balls_r_vel_x,
+			'balls_r_vel_y': mas_balls_r_vel_y}
+
+	# Создаём DataFrame со всеми данными о шариках
+	df = pd.DataFrame(data)
+	# Записываем DataFrame в файл .csv
+	df.to_csv('test.csv')
+	# Отдельно запишем массив wall_position в файл .txt
+	np.savetxt('test.txt', wall_position, fmt='%d')
+
+
 # Задаём размеры окна
 size = width, height = 1000, 750
 
@@ -157,9 +198,12 @@ white_color = 255, 255, 255  # Переменная, определяющая б
 black_color = 0, 0, 0  # Переменная, определяющая чёрный цвет
 delta_t = 0.1  # Шаг по времени, по которому рассчитывается перемещение шариков
 
+# _____Далее идёт основной блок, в котором происходит сам эксперимент______
 run = True  # Переменная, отвечающая за то, активно ли окно
 while run:
-	pygame.time.delay(50)
+	# Сделаем задержку для того чтобы мы могли наблюдать за отрисовкой процесса
+	# Если в отрисовке нет необходимости. то строчку лучше закомментировать
+	# pygame.time.delay(50)
 
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
@@ -216,55 +260,28 @@ while run:
 		if balls_r[i].position_y + balls_r[i].radius > height:
 			balls_r[i].velocity_y *= -1
 
-		# Заполняем массив с пложениями стенки
+		# Заполняем массив с положениями стенки
 		wall_position = np.append(wall_position, wall.get_position())
 
 		# # Отрисовываем шарики слева и справа от стенки:
 		# pygame.draw.circle(screen, white_color, (balls_l[i].position_x, balls_l[i].position_y), balls_l[i].radius)
 		# pygame.draw.circle(screen, white_color, (balls_r[i].position_x, balls_r[i].position_y), balls_r[i].radius)
 
+		# Будем сохранять состояние эксперимента каждые 100 000 перемещений стенки для того чтобы уберечь вычисленные
+		# данные от удаления в случае аварийного завершения процесса
+		if len(wall_position) % 100000 == 0:
+			save_experiment_state(balls_l, balls_r, wall_position)
+			# Следующая строчка удобна для отладки программы и построения графика
+			print(len(wall_position), wall_position[-1])
+
 	# Обновляем дисплей:
 	pygame.display.update()
 
 pygame.quit()
+# ____Основной вычислительный блок эксперимента закончился______
 
-# ____Далее идёт блок, который сохраняет все необходимые данные для восстановления состояния эксперимента_____
-# Создаём массивы для сохранения данных
-mas_balls_l_pos_x = np.zeros(n_balls)
-mas_balls_l_pos_y = np.zeros(n_balls)
-mas_balls_r_pos_x = np.zeros(n_balls)
-mas_balls_r_pos_y = np.zeros(n_balls)
-mas_balls_l_vel_x = np.zeros(n_balls)
-mas_balls_l_vel_y = np.zeros(n_balls)
-mas_balls_r_vel_x = np.zeros(n_balls)
-mas_balls_r_vel_y = np.zeros(n_balls)
-
-# Записываем в массивы все текущие данные о шариках. Делаем это в цикле
-for i in range(n_balls):
-	mas_balls_l_pos_x[i] = balls_l[i].position_x
-	mas_balls_l_pos_y[i] = balls_l[i].position_y
-	mas_balls_r_pos_x[i] = balls_r[i].position_x
-	mas_balls_r_pos_y[i] = balls_r[i].position_y
-	mas_balls_l_vel_x[i] = balls_l[i].velocity_x
-	mas_balls_l_vel_y[i] = balls_l[i].velocity_y
-	mas_balls_r_vel_x[i] = balls_r[i].velocity_x
-	mas_balls_r_vel_y[i] = balls_r[i].velocity_y
-
-data = {'balls_l_pos_x': mas_balls_l_pos_x,
-		'balls_l_pos_y': mas_balls_l_pos_y,
-		'balls_r_pos_x': mas_balls_r_pos_x,
-		'balls_r_pos_y': mas_balls_r_pos_y,
-		'balls_l_vel_x': mas_balls_l_vel_x,
-		'balls_l_vel_y': mas_balls_l_vel_y,
-		'balls_r_vel_x': mas_balls_r_vel_x,
-		'balls_r_vel_y': mas_balls_r_vel_y}
-
-# Создаём DataFrame со всеми данными о шариках
-df = pd.DataFrame(data)
-# Записываем DataFrame в файл .csv
-df.to_csv('test.csv')
-# Отдельно запишем массив wall_position в файл .txt
-np.savetxt('test.txt', wall_position, fmt='%d')
+# Сохраним текущее состояние эксперимента:
+save_experiment_state(balls_l, balls_r, wall_position)
 # ____Теперь все необходимые данные сохранены_____
 
 # Сгладим колебания графика, используя скользящее среднее с шагом n
