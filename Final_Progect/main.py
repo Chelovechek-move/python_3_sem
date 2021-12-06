@@ -15,24 +15,20 @@ class Ball_l:
 	def __init__(self):
 		# radius >= 2
 		self.radius = 2
-		self.delta = self.radius * 0.5
-		self.position_x = random.randrange(self.delta, width / 2 + r_shift - wall_width / 2 - self.delta)
-		self.position_y = random.randrange(self.delta, height - self.delta)
+		self.position_x = random.randrange(self.radius, width / 2 + r_shift - wall_width / 2 - self.radius)
+		self.position_y = random.randrange(self.radius, height - self.radius)
 		self.velocity_x = random.randrange(-100, 100)
 		self.velocity_y = random.randrange(-100, 100)
-		self.m = 10
 
 
 class Ball_r:
 	def __init__(self):
 		# radius >= 2
 		self.radius = 2
-		self.delta = self.radius * 0.5
-		self.position_x = random.randrange(width / 2 + r_shift + wall_width / 2 + self.delta, width - self.delta)
-		self.position_y = random.randrange(self.delta, height - self.delta)
+		self.position_x = random.randrange(width / 2 + r_shift + wall_width / 2 + self.radius, width - self.radius)
+		self.position_y = random.randrange(self.radius, height - self.radius)
 		self.velocity_x = random.randrange(-100, 100)
 		self.velocity_y = random.randrange(-100, 100)
-		self.m = 10
 
 
 class Wall:
@@ -41,7 +37,6 @@ class Wall:
 		self.height = height
 		self.x = (width / 2) + r_shift - (self.width / 2)
 		self.y = 0
-		self.m = 100
 
 	def move(self, x, y):
 		self.x += x
@@ -202,17 +197,17 @@ delta_t = 0.1  # Шаг по времени, по которому рассчи�
 run = True  # Переменная, отвечающая за то, активно ли окно
 while run:
 	# Сделаем задержку для того чтобы мы могли наблюдать за отрисовкой процесса
-	# Если в отрисовке нет необходимости. то строчку лучше закомментировать
+	# Если в отрисовке нет необходимости, то строчку лучше закомментировать
 	# pygame.time.delay(50)
 
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
 			run = False
 
-	screen.fill(black_color)
+	# screen.fill(black_color)
 
 	# Отрисовка стенки
-	pygame.draw.rect(screen, (0, 255, 0), (wall.x, wall.y, wall.width, wall.height))
+	# pygame.draw.rect(screen, (0, 255, 0), (wall.x, wall.y, wall.width, wall.height))
 
 	# В цикле проходимся по всем шарикам
 	for i in range(n_balls):
@@ -228,7 +223,9 @@ while run:
 		if balls_l[i].position_x + balls_l[i].radius > wall.get_left_coord():
 			balls_l[i].velocity_x *= -1
 			# Мы будем немного телепортировать шарики от стенки после соударения,так как из-за того,
-			# что и они и стенка движутся, то они как бы "прилипают" к ней и сильно замедляют ее перемещение
+			# что и шарики, и стенка движутся, то они как бы "прилипают" к ней и сильно замедляют ее перемещение.
+			# Данный сдвиг имеет довольно большое значение на среднюю скорость движения стенки к асимптоте,
+			# поэтому его стоит сохранять одинаковым, если необходимо сравнить данные из нескольких экспериментов
 			balls_l[i].position_x = balls_l[i].position_x - 5
 			# Двигаем саму стенку
 			wall.move(1, 0)
@@ -250,7 +247,9 @@ while run:
 		if balls_r[i].position_x - balls_r[i].radius < wall.get_right_coord():
 			balls_r[i].velocity_x *= -1
 			# Мы будем немного телепортировать шарики от стенки после соударения,так как из-за того,
-			# что и они и стенка движутся, то они как бы "прилипают" к ней и сильно замедляют ее перемещение
+			# что и шарики, и стенка движутся, то они как бы "прилипают" к ней и сильно замедляют ее перемещение.
+			# Данный сдвиг имеет довольно большое значение на среднюю скорость движения стенки к асимптоте,
+			# поэтому его стоит сохранять одинаковым, если необходимо сравнить данные из нескольких экспериментов
 			balls_r[i].position_x = balls_r[i].position_x + 5
 			# Двигаем саму стенку
 			wall.move(-1, 0)
@@ -263,7 +262,7 @@ while run:
 		# Заполняем массив с положениями стенки
 		wall_position = np.append(wall_position, wall.get_position())
 
-		# # Отрисовываем шарики слева и справа от стенки:
+		# Отрисовываем шарики слева и справа от стенки:
 		# pygame.draw.circle(screen, white_color, (balls_l[i].position_x, balls_l[i].position_y), balls_l[i].radius)
 		# pygame.draw.circle(screen, white_color, (balls_r[i].position_x, balls_r[i].position_y), balls_r[i].radius)
 
@@ -274,17 +273,31 @@ while run:
 			# Следующая строчка удобна для отладки программы и построения графика
 			print(len(wall_position), wall_position[-1])
 
+		# Будем строить график сразу же по ходу проведения эксперимента
+		# Будем вносить изменения в график каждые 1000 перемещений стенки
+		if len(wall_position) % 1000 == 0:
+			data_x = np.arange(len(wall_position))
+			plt.ion()  # interactive mode will be on
+			plt.clf()  # clear the current figure
+			plt.grid(True)
+			plt.plot(data_x, wall_position, label='Сырые данные')
+			plt.draw()  # updating plot
+			plt.gcf().canvas.flush_events()  # updating plot
+			plt.show()
+
 	# Обновляем дисплей:
 	pygame.display.update()
 
 pygame.quit()
+plt.ioff()  # interactive mode will be off
 # ____Основной вычислительный блок эксперимента закончился______
 
 # Сохраним текущее состояние эксперимента:
 save_experiment_state(balls_l, balls_r, wall_position)
 # ____Теперь все необходимые данные сохранены_____
 
-# Сгладим колебания графика, используя скользящее среднее с шагом n
+# Для того чтобы получить первое представление о полученной зависимости сгладим колебания графика,
+# используя скользящее среднее с шагом n
 n = 100000
 data_y_new = np.zeros(wall_position.size)
 
@@ -296,9 +309,8 @@ for i in range(wall_position.size):
 		sum_data = (wall_position[i - n:i].sum()) / n
 		data_y_new[i] = sum_data
 
-# Построим график
+# Построим итоговый график
 data_x = np.arange(len(wall_position))
-
 plt.grid(True)
 plt.plot(data_x, wall_position, label='Сырые данные')
 plt.plot(data_x, data_y_new, label='Данные после фильтра')
